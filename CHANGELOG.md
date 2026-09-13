@@ -19,6 +19,12 @@ All notable changes to Beacon (formerly Lookout) are documented here. Format loo
 ## Unreleased
 
 ### Codex sessions without hooks, grouped sessions and usage chips — 2026-09-13
+- Deduplicate Codex CLI sessions by the rollout files their live processes have open, retaining
+  terminal focus information and hook-state precedence. Unverified CLI rollouts do not add rows.
+- Retain rollout metadata in memory across bounded tail reads, skip unchanged files, and discard
+  cached metadata when a file expires or is replaced/truncated.
+- Keep all pinned sessions above the project groups in **Pinned first** mode, and let both manual
+  usage-refresh controls retry immediately after backoff or a denied Keychain prompt.
 - Codex Desktop sessions are discovered from Codex's own rollout files under `~/.codex/sessions/`,
   so they appear without trusted hooks. Only threads the user started become rows; Codex's
   sub-agent and review threads fold into their parent. A hook-written state file for the same id

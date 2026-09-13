@@ -19,7 +19,7 @@ Formerly Lookout. A personal, community-developed project maintained by
 - **Track sessions and sub-agents.** Live state, project, model, elapsed time and context usage;
   filter by state or host, sort by activity or project, and pin important sessions. Codex sessions
   get their own section and appear even without trusted hooks; sessions cluster by project, with
-  worktrees under their repository.
+  worktrees under their repository. **Pinned first** keeps pinned sessions above all project groups.
 - **Bring you back to the work.** Jump to a supported editor, terminal or desktop session.
   Optional notifications and configurable global shortcuts help you respond quickly.
 - **Answer supported requests.** Attention cards show permission requests and questions. Allow,
