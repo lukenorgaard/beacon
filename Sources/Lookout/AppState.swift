@@ -305,6 +305,13 @@ final class AppState: ObservableObject {
             .sink { [weak self] _ in self?.refreshCodexUsage() }
             .store(in: &cancellables)
 
+        // The rollout-derived limits change on the store's own tick, off this run loop.
+        store.$rolloutUsage
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.refreshCodexUsage() }
+            .store(in: &cancellables)
+
         // Bug fix (2026-09-04): the watcher's own 5 s timer publishes on its own schedule, off
         // this run loop entirely — a new (or newly closed) Codex question re-runs the whole
         // decorate/sort/notify pipeline exactly the way a renamed session already does above.

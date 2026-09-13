@@ -48,7 +48,25 @@ extension AppState {
     /// populate `codexUsage` without calling `start()` (which would touch the network, the
     /// notification center and a handful of file watchers a headless test must never run).
     func refreshCodexUsage() {
-        let snapshot = CodexUsageReader.read(home: home)
+        let snapshot = AppState.newerCodexUsage(
+            file: CodexUsageReader.read(home: home), rollout: store.rolloutUsage
+        )
         if snapshot != codexUsage { codexUsage = snapshot }
+    }
+
+    /// The reporter's `codex-usage.json` and the limits read straight from a live rollout
+    /// describe the same account; whichever was written later is the truth. Either alone is
+    /// enough, which is what makes the Usage tab and the header chip work before any hook has
+    /// ever been trusted.
+    static func newerCodexUsage(
+        file: CodexUsageSnapshot?, rollout: CodexUsageSnapshot?
+    ) -> CodexUsageSnapshot? {
+        switch (file, rollout) {
+        case (nil, nil): return nil
+        case (let file?, nil): return file
+        case (nil, let rollout?): return rollout
+        case (let file?, let rollout?):
+            return (rollout.updated ?? .distantPast) > (file.updated ?? .distantPast) ? rollout : file
+        }
     }
 }
