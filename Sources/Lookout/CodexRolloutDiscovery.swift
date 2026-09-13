@@ -271,16 +271,17 @@ enum CodexRolloutDiscovery {
     /// Every live *user-started* rollout as a session row, with Codex's own sub-agent and
     /// review threads folded into their parent's `subagents`, plus the newest rate-limit
     /// snapshot seen in any of them.
-    static func discover(now: Date = Date(), io: IO = .live) -> Found {
+    static func discover(
+        now: Date = Date(), io: IO = .live, cache: CodexRolloutCache = CodexRolloutCache()
+    ) -> Found {
         var parents: [String: Session] = [:]
         var children: [(Meta, Look, Rollout)] = []
         var found = Found()
 
-        for rollout in io.list(now) {
-            guard let headData = io.head(rollout.path, headBytes),
-                  let meta = meta(head: headData)
-            else { continue }
-            let look = look(tail: io.tail(rollout.path, tailBytes) ?? Data())
+        let files = io.list(now)
+        cache.retain(paths: Set(files.map(\.path)))
+        for rollout in files {
+            guard let (meta, look) = cache.read(rollout, io: io) else { continue }
             if let usage = look.usage,
                (found.usage?.updated ?? .distantPast) < (usage.updated ?? .distantPast) {
                 found.usage = usage

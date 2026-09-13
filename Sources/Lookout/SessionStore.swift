@@ -51,6 +51,7 @@ final class SessionStore: ObservableObject {
     private var previousStates: [String: SessionState] = [:]
     private var seededTransitions = false
     private let scanner = ProcessScanRunner()
+    private let rolloutCache = CodexRolloutCache()
     private var prunes: Bool
 
     /// Adaptive-cadence state (`ScanCadence`), queue-confined like everything else here.
@@ -187,10 +188,12 @@ final class SessionStore: ObservableObject {
             // Codex Desktop sessions have no process to scan for and, without trusted hooks, no
             // state file either; their own rollout files are the third source. Same merge rule:
             // a state file for the id wins.
-            let rollouts = CodexRolloutDiscovery.discover()
+            let rollouts = CodexRolloutDiscovery.discover(cache: rolloutCache)
             // A discovered row now carries the real session id, so the file has to win on id
             // as well as on pid (SPEC §9.1).
-            merged = Session.merge(files: fileSessions, discovered: discovered + rollouts.sessions)
+            merged = CodexDiscoveryMerge.merge(
+                files: fileSessions, processes: discovered, rollouts: rollouts.sessions
+            )
 
             // Feeds `ScanCadence`: the tick stays fast while the set of discovered agent pids (or
             // live rollouts) is still changing, and backs off once it has been stable for a scan.
@@ -209,6 +212,7 @@ final class SessionStore: ObservableObject {
             }
         } else {
             candidatesChangedLastScan = false
+            rolloutCache.retain(paths: [])
         }
 
         let sorted = Session.sorted(merged)
