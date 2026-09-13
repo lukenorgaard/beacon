@@ -168,10 +168,15 @@ struct SessionRow: View {
                     nameLine
 
                     HStack(spacing: metrics.scaled(5)) {
+                        // Priority, not `fixedSize`: the status keeps its full width whenever
+                        // it fits — which is every ordinary label — but it can still give way
+                        // instead of shoving the whole row past the edge of the panel.
                         Text(session.statusLabel)
                             .font(metrics.rowSecondary)
                             .foregroundStyle(accent)
-                            .fixedSize(horizontal: true, vertical: false)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
                         if let secondary = session.rowDetail, !secondary.isEmpty {
                             Text("·")
                                 .font(metrics.rowSecondary)
