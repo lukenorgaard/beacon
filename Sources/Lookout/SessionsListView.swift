@@ -29,10 +29,13 @@ struct SessionsListView: View {
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: metrics.rowGap) {
-                        ForEach(SessionSections(state.visibleSessions).items) { item in
+                        ForEach(state.sessionSections.items) { item in
                             switch item {
                             case .section(let title, let count):
-                                SessionSectionHeader(title: title, count: count, color: Theme.familyCodex)
+                                SessionSectionHeader(
+                                    title: title, count: count,
+                                    color: title == "CODEX" ? Theme.familyCodex : Theme.textSecondary
+                                )
                             case .project(let name, let count, let codex):
                                 SessionSectionHeader(
                                     title: name, count: count,
@@ -53,48 +56,48 @@ struct SessionsListView: View {
     /// One session row with its context menu — shared by both sections of the list.
     @ViewBuilder
     private func row(_ session: Session) -> some View {
-                    SessionRow(
-                        session: session,
-                        isSeen: session.state == .done && state.seen.isSeen(session.id),
-                        isPinned: state.isPinned(session),
-                        pricing: state.settings.pricing,
-                        // SPEC §19.2/§19.3: the window the chip's percentage is
-                        // measured against, and the threshold it turns red at.
-                        contextWindows: state.settings.contextWindows,
-                        contextWarnFraction: state.settings.contextWarnFraction,
-                        onFrame: { frames.set($0, for: session.id) }
-                    ) {
-                        state.jump(to: session)
-                    }
-                    // SPEC §11.4: per-session opt-in lives in the row's menu, and
-                    // SPEC §15.4's Rename… sits under it.
-                    .contextMenu {
-                        // SPEC §17.3.
-                        Button(
-                            state.isPinned(session) ? "✓ Pin to top" : "Pin to top"
-                        ) {
-                            state.togglePin(for: session)
-                        }
-                        // On hold: "finished or on hold, not closing it" — a toggle right
-                        // beside Pin to top.
-                        Button(
-                            state.isHeld(session) ? "Resume" : "Put on hold"
-                        ) {
-                            state.toggleHold(for: session)
-                        }
-                        Button(
-                            state.cardsEnabled(for: session)
-                                ? "✓ Cards for this session"
-                                : "Cards for this session"
-                        ) {
-                            state.toggleCards(for: session)
-                        }
-                        Button("Rename…") {
-                            state.beginRename(
-                                session, rowFrame: frames.frame(for: session.id)
-                            )
-                        }
-                    }
+        SessionRow(
+            session: session,
+            isSeen: session.state == .done && state.seen.isSeen(session.id),
+            isPinned: state.isPinned(session),
+            pricing: state.settings.pricing,
+            // SPEC §19.2/§19.3: the window the chip's percentage is
+            // measured against, and the threshold it turns red at.
+            contextWindows: state.settings.contextWindows,
+            contextWarnFraction: state.settings.contextWarnFraction,
+            onFrame: { frames.set($0, for: session.id) }
+        ) {
+            state.jump(to: session)
+        }
+        // SPEC §11.4: per-session opt-in lives in the row's menu, and
+        // SPEC §15.4's Rename… sits under it.
+        .contextMenu {
+            // SPEC §17.3.
+            Button(
+                state.isPinned(session) ? "✓ Pin to top" : "Pin to top"
+            ) {
+                state.togglePin(for: session)
+            }
+            // On hold: "finished or on hold, not closing it" — a toggle right
+            // beside Pin to top.
+            Button(
+                state.isHeld(session) ? "Resume" : "Put on hold"
+            ) {
+                state.toggleHold(for: session)
+            }
+            Button(
+                state.cardsEnabled(for: session)
+                    ? "✓ Cards for this session"
+                    : "Cards for this session"
+            ) {
+                state.toggleCards(for: session)
+            }
+            Button("Rename…") {
+                state.beginRename(
+                    session, rowFrame: frames.frame(for: session.id)
+                )
+            }
+        }
     }
 }
 

@@ -56,6 +56,11 @@ extension AppState {
 
     // MARK: - Sorting and filtering (SPEC §17.3)
 
+    /// The row order and header count must agree in both SwiftUI and the native panel sizing.
+    var sessionSections: SessionSections {
+        SessionSections(visibleSessions, pinned: settings.pinnedSessions, order: settings.sessionOrder)
+    }
+
     /// Nil when nothing is hiding rows — the status item's own counts are unaffected either way,
     /// since they read `allSessions`, never `visibleSessions`.
     var filterSummary: String? {

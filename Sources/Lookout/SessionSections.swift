@@ -5,9 +5,8 @@ import SwiftUI
 /// Within each part, sessions of the same project sit together, and a project with more than one
 /// session gets a small header of its own.
 ///
-/// A regrouping, not a re-sort: each part keeps the order `visibleSessions` already has — the
-/// user's chosen sort order, filters and pins all still apply. A project cluster sits where its
-/// first session would have been, so the cluster holding the most urgent session still leads.
+/// Projects follow their first row in the selected sort order. In Pinned first mode, pinned
+/// sessions have their own leading section across all agents and projects.
 struct SessionSections: Equatable {
     enum Item: Identifiable, Equatable {
         /// The `CODEX` divider between the two parts.
@@ -29,13 +28,22 @@ struct SessionSections: Equatable {
     var codex: [Session]
     let items: [Item]
 
-    init(_ sessions: [Session]) {
+    init(_ sessions: [Session], pinned: Set<String> = [], order: SessionOrder = .state) {
         others = sessions.filter { $0.agent != .codex }
         codex = sessions.filter { $0.agent == .codex }
-        var items = SessionSections.clustered(others, codex: false)
-        if !codex.isEmpty {
-            items.append(.section(title: "CODEX", count: codex.count))
-            items += SessionSections.clustered(codex, codex: true)
+        let pinnedRows = order == .pinned ? sessions.filter { pinned.contains($0.id) } : []
+        let pinnedIDs = Set(pinnedRows.map(\.id))
+        let remainingOthers = others.filter { !pinnedIDs.contains($0.id) }
+        let remainingCodex = codex.filter { !pinnedIDs.contains($0.id) }
+        var items: [Item] = []
+        if !pinnedRows.isEmpty {
+            items.append(.section(title: "PINNED", count: pinnedRows.count))
+            items += pinnedRows.map(Item.row)
+        }
+        items += SessionSections.clustered(remainingOthers, codex: false)
+        if !remainingCodex.isEmpty {
+            items.append(.section(title: "CODEX", count: remainingCodex.count))
+            items += SessionSections.clustered(remainingCodex, codex: true)
         }
         self.items = items
     }

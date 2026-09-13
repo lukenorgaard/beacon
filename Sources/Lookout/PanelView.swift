@@ -239,7 +239,7 @@ struct PanelView: View {
         case .sessions:
             SessionsListView(state: state)
                 .frame(height: {
-                    let sections = SessionSections(state.visibleSessions)
+                    let sections = state.sessionSections
                     return metrics.listHeight(rows: sections.rowCount, headers: sections.headerCount)
                 }())
         case .agents:

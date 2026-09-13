@@ -115,4 +115,36 @@ final class SessionSectionsTests: XCTestCase {
         XCTAssertEqual(metrics.listHeight(rows: 0, headers: 1), metrics.emptyHeight)
         XCTAssertLessThanOrEqual(metrics.listHeight(rows: 400, headers: 9), metrics.listMaxHeight)
     }
+
+    func testPinnedFirstKeepsAllPinsAheadOfProjectGroupsAcrossAgents() {
+        let sessions = [
+            session("a-pin", .claude, cwd: "/p/alpha"),
+            session("b-pin", .claude, cwd: "/p/beta"),
+            session("x-pin", .codex, cwd: "/p/alpha"),
+            session("a-rest", .claude, cwd: "/p/alpha"),
+            session("x-rest", .codex, cwd: "/p/alpha"),
+        ]
+        let sections = SessionSections(sessions, pinned: ["a-pin", "b-pin", "x-pin"], order: .pinned)
+        XCTAssertEqual(rows(sections.items), ["a-pin", "b-pin", "x-pin", "a-rest", "x-rest"])
+        XCTAssertEqual(headers(sections.items), ["PINNED 3", "alpha 1", "CODEX 1", "codex:alpha 1"])
+        XCTAssertEqual(sections.rowCount, sessions.count)
+        XCTAssertEqual(Set(sections.items.map(\.id)).count, sections.items.count)
+    }
+
+    func testOtherSortModesKeepTheirExistingGroupsEvenWhenPinsExist() {
+        let sessions = [session("a", .claude, cwd: "/p/alpha"), session("b", .codex, cwd: "/p/beta")]
+        for order in [SessionOrder.state, .activity, .project] {
+            XCTAssertEqual(SessionSections(sessions, pinned: ["b"], order: order), SessionSections(sessions))
+        }
+    }
+
+    func testAllPinnedAndNoPinnedListsHaveTheCorrectHeaderCounts() {
+        let sessions = [session("a", .claude), session("b", .codex)]
+        let all = SessionSections(sessions, pinned: ["a", "b"], order: .pinned)
+        XCTAssertEqual(headers(all.items), ["PINNED 2"])
+        XCTAssertEqual(all.headerCount, 1)
+        XCTAssertEqual(rows(all.items), ["a", "b"])
+        XCTAssertEqual(SessionSections(sessions, pinned: [], order: .pinned), SessionSections(sessions))
+        XCTAssertTrue(SessionSections([], pinned: ["a"], order: .pinned).items.isEmpty)
+    }
 }
