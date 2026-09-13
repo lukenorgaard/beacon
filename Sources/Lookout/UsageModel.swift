@@ -138,6 +138,9 @@ struct UsageSnapshot: Equatable {
 enum UsageError: Error, Equatable {
     /// No `Claude Code-credentials` item in the keychain.
     case notSignedIn
+    /// The keychain prompt was denied or dismissed. Distinct from `notSignedIn`: the credential
+    /// is there, macOS is just not letting us read it until the user says so.
+    case keychainDenied
     /// 401 twice in a row — the token is stale and Claude Code has not refreshed it.
     case expired
     case http(Int)
@@ -147,6 +150,7 @@ enum UsageError: Error, Equatable {
     var message: String {
         switch self {
         case .notSignedIn: return "Not signed in to Claude Code"
+        case .keychainDenied: return "Keychain access denied — hit Refresh to ask again"
         case .expired: return "Sign-in expired — run any Claude Code command"
         case .http(let code): return "Usage API error \(code)"
         case .offline: return "Offline"

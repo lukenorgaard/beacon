@@ -9,18 +9,44 @@ import os
 enum Keychain {
     static let service = "Claude Code-credentials"
 
-    static func claudeAccessToken() -> String? {
+    /// Why a read produced no token. `denied` matters on its own: switching Claude accounts
+    /// rewrites the credential, which can reset the item's access list, and the next read raises
+    /// the "Beacon wants to access..." prompt again. Retrying that on the ordinary 60 s tick
+    /// re-raises the prompt every minute forever, which is what made it feel endless.
+    enum Outcome: Equatable {
+        case token(String)
+        case missing
+        case denied
+    }
+
+    static func outcome(for status: OSStatus, data: Data?) -> Outcome {
+        switch status {
+        case errSecSuccess:
+            guard let data, let value = token(fromCredentialsJSON: data) else { return .missing }
+            return .token(value)
+        case errSecUserCanceled, errSecAuthFailed, errSecInteractionNotAllowed,
+             errSecInteractionRequired, errSecNotAvailable:
+            return .denied
+        default:
+            return .missing
+        }
+    }
+
+    static func claudeAccessTokenOutcome() -> Outcome {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
-
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else { return nil }
-        return token(fromCredentialsJSON: data)
+        return outcome(for: status, data: item as? Data)
+    }
+
+    static func claudeAccessToken() -> String? {
+        if case .token(let value) = claudeAccessTokenOutcome() { return value }
+        return nil
     }
 
     /// `{"claudeAiOauth": {"accessToken": "…"}}` — anything else is treated as no token.
@@ -50,6 +76,21 @@ final class UsageClient: ObservableObject {
     private var interval: TimeInterval = 60
     private var inFlight = false
     private var lastAttempt: Date?
+    /// Consecutive rate-limit / server errors. The endpoint answers 429 when it has had enough,
+    /// and polling straight through that only keeps the limit alive, so each strike pushes the
+    /// next attempt further out. A success clears it.
+    /// The access token, held only in memory for the life of the process and never written
+    /// anywhere. The keychain is read once, not on every poll: clicking **Allow** (rather than
+    /// **Always Allow**) grants a *single* read, so re-reading each minute put the prompt back on
+    /// screen every minute. Cleared on 401, which is how a rotated or switched-account token is
+    /// noticed — the next read picks up the new one.
+    private var cachedToken: String?
+    private var throttleStrikes = 0
+    private var retryNotBefore: Date?
+    private static let backoffFloor: TimeInterval = 30
+    private static let backoffCap: TimeInterval = 15 * 60
+    /// A denied keychain prompt is a decision, not a blip: stop asking until the user asks us to.
+    private static let deniedHold: TimeInterval = 60 * 60
 
     init(session: URLSession? = nil, snapshot: UsageSnapshot? = nil) {
         self.snapshot = snapshot
@@ -90,9 +131,11 @@ final class UsageClient: ObservableObject {
         refresh()
     }
 
-    func refresh() {
+    /// `force` is the Refresh button: a person asking explicitly outranks the backoff.
+    func refresh(force: Bool = false) {
         queue.async { [weak self] in
             guard let self, !self.inFlight else { return }
+            if !force, let until = self.retryNotBefore, Date() < until { return }
             self.inFlight = true
             self.lastAttempt = Date()
             DispatchQueue.main.async { self.isRefreshing = true }
@@ -114,8 +157,18 @@ final class UsageClient: ObservableObject {
             }
             return
         }
-        guard let token = Keychain.claudeAccessToken() else {
+        let token: String
+        switch cachedToken.map(Keychain.Outcome.token) ?? Keychain.claudeAccessTokenOutcome() {
+        case .token(let value):
+            token = value
+            cachedToken = value
+        case .missing:
             finish(.failure(.notSignedIn))
+            return
+        case .denied:
+            // Do not walk back into the prompt on the next tick. The Refresh button forces it.
+            holdOff(seconds: UsageClient.deniedHold)
+            finish(.failure(.keychainDenied))
             return
         }
 
@@ -135,6 +188,7 @@ final class UsageClient: ObservableObject {
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0
                 if code == 401 {
                     // Claude Code refreshes its own token; re-read the keychain and try once more.
+                    self.cachedToken = nil
                     if retryOn401 {
                         self.fetch(retryOn401: false)
                     } else {
@@ -143,6 +197,11 @@ final class UsageClient: ObservableObject {
                     return
                 }
                 guard (200..<300).contains(code) else {
+                    if code == 429 || (500..<600).contains(code) {
+                        let header = (response as? HTTPURLResponse)?
+                            .value(forHTTPHeaderField: "Retry-After")
+                        self.backOff(retryAfter: header)
+                    }
                     self.finish(.failure(.http(code)))
                     return
                 }
@@ -159,8 +218,34 @@ final class UsageClient: ObservableObject {
         }.resume()
     }
 
+    /// How long to wait after a rate-limit or server error.
+    ///
+    /// A `Retry-After: 0` is not an invitation to retry immediately — taking it literally logged
+    /// "next attempt in 0s", which is no backoff at all. Non-positive or unparseable hints fall
+    /// through to the exponential, and every result is floored and capped.
+    static func backoffDelay(retryAfter: String?, strikes: Int) -> TimeInterval {
+        let suggested = retryAfter.flatMap(TimeInterval.init).flatMap { $0 > 0 ? $0 : nil }
+        let computed = 30 * pow(2, Double(max(strikes, 1) - 1))
+        return min(max(suggested ?? computed, backoffFloor), backoffCap)
+    }
+
+    private func holdOff(seconds: TimeInterval) {
+        retryNotBefore = Date().addingTimeInterval(seconds)
+    }
+
+    private func backOff(retryAfter: String?) {
+        throttleStrikes = min(throttleStrikes + 1, 6)
+        let delay = UsageClient.backoffDelay(retryAfter: retryAfter, strikes: throttleStrikes)
+        retryNotBefore = Date().addingTimeInterval(delay)
+        log.error("Usage rate-limited; next attempt in \(Int(delay), privacy: .public)s")
+    }
+
     private func finish(_ result: Result<UsageSnapshot, UsageError>) {
         inFlight = false
+        if case .success = result {
+            throttleStrikes = 0
+            retryNotBefore = nil
+        }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.isRefreshing = false
