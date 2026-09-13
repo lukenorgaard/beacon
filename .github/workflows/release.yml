@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release assets
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package (pkg + dmg)
+        run: bash scripts/package.sh
+
+      - name: Package editable source
+        run: python3 scripts/package-source.py
+
+      - name: Locate build artifacts
+        id: artifacts
+        run: |
+          pkg="$(ls build/Beacon-*.pkg | head -1)"
+          dmg="$(ls build/Beacon-*.dmg | head -1)"
+          vsix="build/lookout-companion.vsix"
+          [ -f "$pkg" ] || { echo "no pkg found in build/"; exit 1; }
+          [ -f "$dmg" ] || { echo "no dmg found in build/"; exit 1; }
+          [ -f "$vsix" ] || { echo "no companion vsix found in build/"; exit 1; }
+          echo "pkg=$pkg" >> "$GITHUB_OUTPUT"
+          echo "dmg=$dmg" >> "$GITHUB_OUTPUT"
+          echo "vsix=$vsix" >> "$GITHUB_OUTPUT"
+
+      - name: Checksums
+        run: |
+          cd build
+          shasum -a 256 Beacon-*.pkg Beacon-*.dmg lookout-companion.vsix Beacon-*-source.zip > SHA256SUMS
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PKG: ${{ steps.artifacts.outputs.pkg }}
+          DMG: ${{ steps.artifacts.outputs.dmg }}
+          VSIX: ${{ steps.artifacts.outputs.vsix }}
+        run: |
+          notes_file="$(mktemp)"
+          cat > "$notes_file" <<'EOF'
+          ## Install
+
+          These builds are not Apple-notarized unless the release explicitly states otherwise.
+          Verify the download and review the installation guide before allowing an app blocked by
+          macOS. Do not disable Gatekeeper globally.
+
+          The source ZIP includes the editable Swift app, Python hooks, editor companion and tests.
+          Check downloaded assets against `SHA256SUMS` with `shasum -a 256 -c SHA256SUMS`.
+          EOF
+          printf '\nSee the [README](https://github.com/%s/blob/main/docs/INSTALL.md) for setup and [CHANGELOG](https://github.com/%s/blob/main/CHANGELOG.md) for changes.\n' "$GITHUB_REPOSITORY" "$GITHUB_REPOSITORY" >> "$notes_file"
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --title "Beacon ${GITHUB_REF_NAME}" \
+            --notes-file "$notes_file" \
+            "$PKG" "$DMG" "$VSIX" build/Beacon-*-source.zip build/SHA256SUMS

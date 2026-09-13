@@ -1,0 +1,18 @@
+{
+  "name": "lookout-companion",
+  "publisher": "lukenorgaard",
+  "license": "MIT",
+  "version": "0.1.0",
+  "displayName": "Beacon Companion",
+  "description": "Lets Beacon focus and talk to the integrated terminals of this window over a token-protected localhost port.",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js"
+}

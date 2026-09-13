@@ -1,0 +1,31 @@
+# Swift Package Manager
+.build/
+.swiftpm/xcode/
+
+# Build output (app bundle, pkg, dmg, vsix)
+build/
+*.pkg
+*.dmg
+*.vsix
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Misc
+*.tmp
+*.lock
+
+# Local development records and credentials
+/SESSION-LOG.md
+/docs/SESSION_CHECKPOINT.md
+.env
+.env.*
+!.env.example
+.codex/
+*.p12
+*.pfx
+*.key

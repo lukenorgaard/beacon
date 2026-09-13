@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "agent": "claude",
+  "session_id": "3b6a2c19-88de-4d15-9c30-51e0f4a7b2c8",
+  "state": "working",
+  "reason": "tool",
+  "detail": "Edit",
+  "cwd": "/Users/you/Desktop/docs-site",
+  "project": "docs-site",
+  "title": "Document the sample command-line tool",
+  "pid": 1,
+  "tty": "ttys008",
+  "host": "devin",
+  "host_pid": 1,
+  "entrypoint": "cli",
+  "model": "llama-3.3-70b",
+  "provider": "local",
+  "started_at": "2026-09-02T03:55:00Z",
+  "state_since": "2026-09-02T04:20:00Z",
+  "updated_at": "2026-09-02T04:20:05Z",
+  "subagents": [
+    {
+      "id": "agent_7f21",
+      "type": "general-purpose",
+      "description": "Skriv tests til eksempelkoden og kontrollér resultaterne",
+      "model": "sonnet",
+      "started_at": "2026-09-02T04:18:00Z",
+      "cwd": "/Users/you/Desktop/Acme/_wt/wt-export-import"
+    },
+    {
+      "id": "agent_9c04",
+      "type": "code-reviewer",
+      "description": "Gennemgå eksempelkoden",
+      "model": "opus",
+      "started_at": "2026-09-02T04:19:30Z",
+      "cwd": "/Users/you/Desktop/Acme/_wt/wt-export-import"
+    }
+  ],
+  "messaging_socket": null,
+  "origin_cwd": "/Users/you/Desktop/docs-site",
+  "active_cwd": "/Users/you/Desktop/Acme/_wt/wt-export-import",
+  "worktree": "wt-export-import"
+}

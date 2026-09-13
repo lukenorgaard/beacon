@@ -1,0 +1,11 @@
+{
+  "updated": "2026-09-03T18:00:00Z",
+  "limit_name": null,
+  "plan_type": null,
+  "primary": {
+    "used_percent": 42,
+    "window_minutes": 300,
+    "resets_at": 1788465600
+  },
+  "secondary": null
+}

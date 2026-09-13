@@ -1,0 +1,20 @@
+#!/bin/bash
+# Runs as root at the end of the Beacon install (SPEC §10.3). It opens the app as the person
+# sitting at the Mac so the setup page appears without them hunting for it in /Applications.
+#
+# It must never fail the installation: every step is best-effort and the script always exits 0.
+
+APP="/Applications/Beacon.app"
+
+CONSOLE_USER="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)"
+
+if [ -d "$APP" ] && [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ]; then
+    # A copy left running from a previous version would keep the old binary and a second menu
+    # bar icon; the app also self-quits when it sees another instance, but this is cheaper.
+    /usr/bin/pkill -u "$CONSOLE_USER" -f "$APP/Contents/MacOS/Beacon" >/dev/null 2>&1
+    /usr/bin/pkill -u "$CONSOLE_USER" -f "/Applications/Lookout.app/Contents/MacOS/Lookout" >/dev/null 2>&1
+    /bin/sleep 1
+    /usr/bin/sudo -u "$CONSOLE_USER" /usr/bin/open -a "$APP" >/dev/null 2>&1
+fi
+
+exit 0

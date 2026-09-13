@@ -1,0 +1,13 @@
+{"type": "user", "message": {"role": "user", "content": "first prompt, dropped by the six-turn cap"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "dropped assistant reply"}]}}
+{"type": "user", "message": {"role": "user", "content": "second prompt, also dropped"}}
+{"type": "user", "message": {"role": "user", "content": "Run the migrations for me"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Starting with 004."}, {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "psql -f 004.sql"}}]}}
+{"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "ok"}]}}
+{"type": "queue-operation", "payload": {"x": 1}}
+{"type": "user", "isMeta": true, "message": {"role": "user", "content": "<system-reminder>noise</system-reminder>"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "thinking", "thinking": "hidden"}, {"type": "text", "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}]}}
+{"type": "user", "message": {"role": "user", "content": "Also drop the old index"}}
+{"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": "Done — dropped idx_old."}]}}
+{"type": "user", "message": {"role": "user", "content": "Ja tak, kør 005 bagefter og sig til hvis noget fejler"}}
+{not json at all

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "agent": "claude",
+  "session_id": "9a0c5d34-2e17-4f9b-bd66-4c8a1f0e7d55",
+  "state": "idle",
+  "reason": "session_start",
+  "cwd": "/Users/you/Desktop/Beacon",
+  "project": "Beacon",
+  "pid": 1,
+  "tty": "ttys017",
+  "host": "terminal",
+  "host_pid": 1,
+  "host_ref": "w1t0p0:AA31F0C2-9D45-4E11-8F7C-2B6A0E4D8C99",
+  "entrypoint": "cli",
+  "started_at": "2026-09-02T02:35:00Z",
+  "state_since": "2026-09-02T03:00:00Z",
+  "updated_at": "2026-09-02T03:00:05Z",
+  "messaging_socket": null
+}

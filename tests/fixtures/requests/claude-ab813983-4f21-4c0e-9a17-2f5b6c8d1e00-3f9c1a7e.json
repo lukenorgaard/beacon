@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "agent": "claude",
+  "session_id": "ab813983-4f21-4c0e-9a17-2f5b6c8d1e00",
+  "request_id": "3f9c1a7e",
+  "kind": "permission",
+  "tool_name": "Bash",
+  "summary": "rm -rf build",
+  "command_or_path": "rm -rf build && npm run build -- --mode production --outDir dist\ncp -R dist/* /Users/you/Desktop/daily-notes/public/\nrm -rf node_modules/.vite",
+  "cwd": "/Users/you/Desktop/daily-notes",
+  "created_at": "2036-09-02T04:50:00Z",
+  "waits_until": "2036-09-02T04:50:45Z"
+}

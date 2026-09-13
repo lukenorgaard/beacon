@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain versions
+        run: |
+          swift --version
+          python3 --version
+          node --version
+
+      - name: Enforce 500-line code files
+        run: python3 scripts/check-code-size.py
+
+      - name: swift build
+        run: swift build
+
+      - name: swift test
+        run: swift test
+
+      - name: Reporter + installer end-to-end tests
+        run: bash tests/test_reporter.sh
+
+      - name: Editor companion tests
+        run: node --test companion/test
+
+      - name: Editor companion vsix builds
+        run: python3 scripts/build-companion.py
