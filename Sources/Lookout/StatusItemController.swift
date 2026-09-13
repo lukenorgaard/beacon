@@ -262,7 +262,7 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func refreshUsage() {
-        state.usage.refresh()
+        state.usage.refreshByUser()
     }
 
     @objc private func openSettings() {

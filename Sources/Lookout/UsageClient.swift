@@ -72,6 +72,7 @@ final class UsageClient: ObservableObject {
     private let log = Logger(subsystem: "io.github.lukenorgaard.beacon", category: "usage")
     private let queue = DispatchQueue(label: "io.github.lukenorgaard.beacon.usage", qos: .utility)
     private let session: URLSession
+    private let readToken: () -> Keychain.Outcome
     private var ticker: DispatchSourceTimer?
     private var interval: TimeInterval = 60
     private var inFlight = false
@@ -92,7 +93,11 @@ final class UsageClient: ObservableObject {
     /// A denied keychain prompt is a decision, not a blip: stop asking until the user asks us to.
     private static let deniedHold: TimeInterval = 60 * 60
 
-    init(session: URLSession? = nil, snapshot: UsageSnapshot? = nil) {
+    init(
+        session: URLSession? = nil, snapshot: UsageSnapshot? = nil,
+        readToken: @escaping () -> Keychain.Outcome = Keychain.claudeAccessTokenOutcome
+    ) {
+        self.readToken = readToken
         self.snapshot = snapshot
         self.lastSuccess = snapshot == nil ? nil : Date()
         if let session {
@@ -131,7 +136,12 @@ final class UsageClient: ObservableObject {
         refresh()
     }
 
-    /// `force` is the Refresh button: a person asking explicitly outranks the backoff.
+    /// Shared by both manual refresh controls; a person asking outranks the retry delay.
+    func refreshByUser() {
+        refresh(force: true)
+    }
+
+    /// Automatic refreshes respect backoff and never repeatedly prompt after a denial.
     func refresh(force: Bool = false) {
         queue.async { [weak self] in
             guard let self, !self.inFlight else { return }
@@ -158,7 +168,7 @@ final class UsageClient: ObservableObject {
             return
         }
         let token: String
-        switch cachedToken.map(Keychain.Outcome.token) ?? Keychain.claudeAccessTokenOutcome() {
+        switch cachedToken.map(Keychain.Outcome.token) ?? readToken() {
         case .token(let value):
             token = value
             cachedToken = value

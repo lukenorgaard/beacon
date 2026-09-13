@@ -130,7 +130,7 @@ struct UsageView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: metrics.controlGap)
-            Button("Refresh") { state.usage.refresh(force: true) }
+            Button("Refresh") { state.usage.refreshByUser() }
                 .buttonStyle(QuietButtonStyle(metrics: metrics))
         }
         .padding(.horizontal, metrics.padding)
