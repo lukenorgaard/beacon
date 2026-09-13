@@ -232,7 +232,10 @@ struct PanelView: View {
         switch state.tab {
         case .sessions:
             SessionsListView(state: state)
-                .frame(height: metrics.listHeight(rows: state.visibleSessions.count))
+                .frame(height: {
+                    let sections = SessionSections(state.visibleSessions)
+                    return metrics.listHeight(rows: sections.rowCount, headers: sections.headerCount)
+                }())
         case .agents:
             AgentsListView(state: state)
                 .frame(height: metrics.agentListHeight(rows: state.subagents.count))

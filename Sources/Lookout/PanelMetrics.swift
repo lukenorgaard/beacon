@@ -225,14 +225,14 @@ extension Theme.Metrics {
         func totalHeight(
             tab: PanelTab, rows: Int, cards: Int, extraLine: Bool, agents: Int = 0,
             historyRows: Int = 0, historyGroups: Int = 0,
-            codexCards: Int = 0, sessionsToday: Int = 0,
+            codexCards: Int = 0, sessionsToday: Int = 0, sessionHeaders: Int = 0,
             sentinelRows: [SentinelRowLayout] = [], sentinelApps: Int = 0,
             sentinelThermalChip: Bool = false, sentinelError: Bool = false,
             tabRows: Int = 1
         ) -> CGFloat {
             let content: CGFloat
             switch tab {
-            case .sessions: content = listHeight(rows: rows)
+            case .sessions: content = listHeight(rows: rows, headers: sessionHeaders)
             case .agents: content = agentListHeight(rows: agents)
             case .history:
                 content = historyToolbarHeight + historyListHeight(rows: historyRows, groups: historyGroups)
