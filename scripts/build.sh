@@ -82,6 +82,13 @@ if [ -n "${CODE_SIGN_IDENTITY:-}" ]; then
     IDENTITY="$CODE_SIGN_IDENTITY"
 else
     IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | grep -oE '"Apple Development: [^"]+"' | head -1 | tr -d '"' || true)"
+    # Without an Apple Development identity, a stable self-signed one (see
+    # scripts/make-local-identity.sh) beats ad-hoc: macOS keys the keychain approval and the
+    # Accessibility grant on the signing identity, and an ad-hoc signature changes on every build.
+    # It cannot unlock notifications, which still need an Apple-issued Team ID.
+    if [ -z "$IDENTITY" ] && security find-certificate -c "Beacon Local Signing" >/dev/null 2>&1; then
+        IDENTITY="Beacon Local Signing"
+    fi
 fi
 if [ -n "$IDENTITY" ] && [ "$IDENTITY" != "-" ]; then
     echo "==> Signing with $IDENTITY"
