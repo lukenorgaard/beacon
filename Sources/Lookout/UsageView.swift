@@ -130,7 +130,7 @@ struct UsageView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: metrics.controlGap)
-            Button("Refresh") { state.usage.refresh() }
+            Button("Refresh") { state.usage.refreshByUser() }
                 .buttonStyle(QuietButtonStyle(metrics: metrics))
         }
         .padding(.horizontal, metrics.padding)
@@ -195,8 +195,11 @@ struct UsageCard: View {
         .frame(height: metrics.usageCardHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: metrics.rowCorner, style: .continuous)
-                .fill(Theme.cardFill)
+            ZStack {
+                let shape = RoundedRectangle(cornerRadius: metrics.rowCorner, style: .continuous)
+                shape.fill(Theme.cardBase)
+                shape.fill(Theme.cardFill)
+            }
         )
     }
 }
@@ -237,7 +240,7 @@ struct CodexUsageSection: View {
             Text("CODEX")
                 .font(metrics.sectionLabel)
                 .tracking(0.8)
-                .foregroundStyle(Theme.textTertiary)
+                .foregroundStyle(Theme.familyCodex)
             if let primary = snapshot.primary {
                 CodexUsageBar(title: primary.title, window: primary)
             }
@@ -250,6 +253,21 @@ struct CodexUsageSection: View {
                     .foregroundStyle(Theme.textTertiary)
             }
         }
+        .padding(metrics.rowInset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Codex on its own dark card, told apart from the Claude cards by the
+        // Codex family blue on the label and the outline. The bars keep their band colours —
+        // blue says whose limit this is, green/amber/red says how close it is.
+        .background(
+            ZStack {
+                let shape = RoundedRectangle(cornerRadius: metrics.rowCorner, style: .continuous)
+                shape.fill(Theme.cardBase)
+                shape.fill(Theme.familyCodex.opacity(Theme.familyFill))
+                shape.strokeBorder(
+                    Theme.familyCodex.opacity(Theme.familyStroke), lineWidth: Theme.familyStrokeWidth
+                )
+            }
+        )
     }
 }
 

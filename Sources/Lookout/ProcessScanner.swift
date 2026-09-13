@@ -78,6 +78,10 @@ enum ProcessScanner {
     /// Helper processes that share an agent's name but are not a session (SPEC §8.2).
     static let exclusionMarkers = [
         "mcp-server", "app-server", "mcp serve", "--version", "completion",
+        // The ChatGPT app's code-mode host keeps long-lived `codex sandbox` helpers under
+        // `cua_node/bin/node_repl`. Matched as a subcommand so the `--sandbox` *flag* on a real
+        // session (`codex exec --sandbox read-only`) still counts as a session.
+        "codex sandbox",
     ]
 
     /// Ancestor markers, in priority order. Case-sensitive on purpose: the `claude` CLI must not

@@ -6,7 +6,12 @@ extension Session {
     /// `Bash` out of `Bash: rm -rf build`.
     var detailTool: String? {
         guard let detail, !detail.isEmpty else { return nil }
-        guard let head = detail.split(separator: ":", maxSplits: 1).first else { return nil }
+        let parts = detail.split(separator: ":", maxSplits: 1)
+        // Both halves have to be there, exactly as `detailArgument` insists. Without this the
+        // split hands back the whole detail as a "tool name", `statusLabel` swells to the full
+        // 120-character detail, and the row draws that at its intrinsic width — which is how a
+        // row ended up wider than the panel, clipped at both edges.
+        guard parts.count == 2, let head = parts.first else { return nil }
         let tool = head.trimmingCharacters(in: .whitespaces)
         return tool.isEmpty ? nil : tool
     }

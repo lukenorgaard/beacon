@@ -51,6 +51,9 @@ enum Jumper {
     // MARK: - Claude desktop AX budget (SPEC §9.4, §9.6)
 
     static let desktopBundleID = "com.anthropic.claudefordesktop"
+    /// The ChatGPT desktop app, which hosts Codex sessions. Its bundle id is `com.openai.codex`
+    /// even though the app is named ChatGPT — verified against `/Applications/ChatGPT.app`.
+    static let codexBundleID = "com.openai.codex"
     /// The sidebar is React — the row for a session that was just activated can take a moment to
     /// exist. §9.4 gives the *whole* desktop jump 3 s and not a millisecond more; §9.6 reserves
     /// `axPostMatchReserve` of that for the press probe, the click and its verification (with one
@@ -132,10 +135,33 @@ enum Jumper {
             if focusTerminal(tty: session.tty) { return }
         case .iterm:
             if focusITerm(reference: session.hostRef) { return }
-        case .claudeDesktop, .codexApp, .unknown:
+        case .codexApp:
+            if activateCodexApp() { return }
+        case .claudeDesktop, .unknown:
             break
         }
 
         activate(session)
+    }
+}
+
+extension Jumper {
+    /// SPEC line 245: a Codex desktop session is an "app activation only" jump.
+    ///
+    /// Two things had to be true and neither was. `activate(_:)` cannot reach the app, because
+    /// the host pid the scanner records is an in-bundle helper (`cua_node/bin/node_repl` under
+    /// `ChatGPT.app`) and `NSRunningApplication(processIdentifier:)` is nil for anything that is
+    /// not a registered application — so the click did nothing at all. And LaunchServices is no
+    /// way out either: measured on macOS 26.5, neither `open -b com.openai.codex` nor
+    /// `open -a /Applications/ChatGPT.app` moves the app to the front, whether it is hidden or
+    /// merely backgrounded, even though both exit 0. AppleScript activation does work, and it is
+    /// the same mechanism the terminal jumps already use.
+    static func codexActivationScript() -> String {
+        "tell application id \"\(codexBundleID)\" to activate"
+    }
+
+    @discardableResult
+    static func activateCodexApp() -> Bool {
+        runAppleScript(codexActivationScript())
     }
 }

@@ -161,10 +161,25 @@ extension Theme.Metrics {
         /// header's second line instead (`headerDetailWidth`). the owner reads those two percentages
         /// constantly — they are never simply dropped.
         func tabStripFitsSummary(labels: [String], summary: String) -> Bool {
+            tabStripFitsSummary(labels: labels, summaryWidth: textWidth(summary, font: numeralNSFont))
+        }
+
+        /// The usage summary is drawn as chips (`UsageChips`), and a chip is wider than its
+        /// text: padding either side plus the 1 pt outline, and two chips sit a control gap
+        /// apart. Measured here so the fit decisions and the drawn chips agree.
+        var usageChipInset: CGFloat { scaled(7) + Theme.familyStrokeWidth }
+
+        func usageChipsWidth(texts: [String]) -> CGFloat {
+            guard !texts.isEmpty else { return 0 }
+            let chips = texts.map { textWidth($0, font: numeralNSFont) + 2 * usageChipInset }
+            return chips.reduce(0, +) + CGFloat(texts.count - 1) * controlGap
+        }
+
+        func tabStripFitsSummary(labels: [String], summaryWidth: CGFloat) -> Bool {
             let needed = 2 * padding
                 + tabStripWidth(labels: labels)
                 + 3 * controlGap
-                + textWidth(summary, font: numeralNSFont)
+                + summaryWidth
             return needed <= width
         }
 
@@ -172,10 +187,13 @@ extension Theme.Metrics {
         /// place at the right of the same row. The line is indented under the headline text, past
         /// the status dot and its gap.
         func headerDetailWidth(summary: String?) -> CGFloat {
+            let summaryWidth = summary.map { textWidth($0, font: numeralNSFont) } ?? 0
+            return headerDetailWidth(summaryWidth: (summary?.isEmpty ?? true) ? 0 : summaryWidth)
+        }
+
+        func headerDetailWidth(summaryWidth: CGFloat) -> CGFloat {
             var available = width - 2 * padding - (scaled(7) + controlGap)
-            if let summary, !summary.isEmpty {
-                available -= controlGap + textWidth(summary, font: numeralNSFont)
-            }
+            if summaryWidth > 0 { available -= controlGap + summaryWidth }
             return max(0, available)
         }
 
@@ -225,14 +243,14 @@ extension Theme.Metrics {
         func totalHeight(
             tab: PanelTab, rows: Int, cards: Int, extraLine: Bool, agents: Int = 0,
             historyRows: Int = 0, historyGroups: Int = 0,
-            codexCards: Int = 0, sessionsToday: Int = 0,
+            codexCards: Int = 0, sessionsToday: Int = 0, sessionHeaders: Int = 0,
             sentinelRows: [SentinelRowLayout] = [], sentinelApps: Int = 0,
             sentinelThermalChip: Bool = false, sentinelError: Bool = false,
             tabRows: Int = 1
         ) -> CGFloat {
             let content: CGFloat
             switch tab {
-            case .sessions: content = listHeight(rows: rows)
+            case .sessions: content = listHeight(rows: rows, headers: sessionHeaders)
             case .agents: content = agentListHeight(rows: agents)
             case .history:
                 content = historyToolbarHeight + historyListHeight(rows: historyRows, groups: historyGroups)

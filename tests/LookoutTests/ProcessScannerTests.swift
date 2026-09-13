@@ -259,6 +259,19 @@ final class LiveProcessScanTests: XCTestCase {
             "session ids must not churn between ticks"
         )
     }
+
+    /// The ChatGPT app's code-mode host keeps long-lived `codex sandbox` helpers alive under
+    /// `cua_node/bin/node_repl`. They are not sessions, and listing them put three identical
+    /// rows in the panel for one project.
+    func testCodexSandboxHelperIsExcluded() {
+        XCTAssertTrue(ProcessScanner.isExcluded(
+            command: "/Applications/ChatGPT.app/Contents/Resources/codex sandbox -c shell_environment_policy.inherit=\"all\""
+        ))
+        // A real session that merely picks a sandbox policy must survive: the marker is the
+        // `sandbox` subcommand, not the `--sandbox` flag.
+        XCTAssertFalse(ProcessScanner.isExcluded(command: "codex exec --sandbox read-only \"do a thing\""))
+        XCTAssertFalse(ProcessScanner.isExcluded(command: "claude --sandbox workspace-write"))
+    }
 }
 
 /// The libproc snapshot that replaced the `ps` fork (SPEC §5.6 performance rules).

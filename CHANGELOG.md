@@ -18,6 +18,37 @@ All notable changes to Beacon (formerly Lookout) are documented here. Format loo
 
 ## Unreleased
 
+### Codex sessions without hooks, grouped sessions and usage chips — 2026-09-13
+- Deduplicate Codex CLI sessions by the rollout files their live processes have open, retaining
+  terminal focus information and hook-state precedence. Unverified CLI rollouts do not add rows.
+- Retain rollout metadata in memory across bounded tail reads, skip unchanged files, and discard
+  cached metadata when a file expires or is replaced/truncated.
+- Keep all pinned sessions above the project groups in **Pinned first** mode, and let both manual
+  usage-refresh controls retry immediately after backoff or a denied Keychain prompt.
+- Codex Desktop sessions are discovered from Codex's own rollout files under `~/.codex/sessions/`,
+  so they appear without trusted hooks. Only threads the user started become rows; Codex's
+  sub-agent and review threads fold into their parent. A hook-written state file for the same id
+  still wins.
+- The Sessions list puts Codex sessions under a `CODEX` header and clusters sessions by project:
+  worktrees group under their repository, and sessions with no identifiable project go to `Other`.
+  Sort order, filters and pins still apply within each group.
+- Usage chips beside the tabs show Claude and Codex limits, each number amber from 80 % and red
+  from 90 %. The Codex usage section sits on its own card.
+- Session rows and usage cards use an opaque background, and the last row is no longer faded.
+- Codex Desktop rows are activated through AppleScript; `open -b` does not bring that app forward.
+- `codex sandbox` helper processes are excluded from process discovery.
+- A detail without a colon is no longer treated as a tool name, and the status label truncates
+  instead of widening the row past the panel.
+- The usage client backs off on 429 and 5xx responses (honouring `Retry-After`, 30 s to 15 min),
+  pauses after a denied keychain prompt instead of prompting again on every refresh, and keeps the
+  access token in memory only. Refresh always retries.
+- Unpinning warns when macOS has hidden the status item behind the notch, and reopening the app
+  brings the panel back in either mode.
+- `scripts/build.sh` can sign with a stable self-signed identity from
+  `scripts/make-local-identity.sh` when no Apple Development identity is available.
+- `docs/INSTALL.md` covers Keychain *Always Allow*, the local signing identity and Codex sessions
+  appearing before their hooks are trusted.
+
 ### Beacon — 2026-09-13
 - Renamed the app, executable, distribution artifacts and public documentation to Beacon.
 - Moved the repository to `lukenorgaard/beacon`, with Luke as code owner and reviewer.

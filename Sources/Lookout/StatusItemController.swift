@@ -135,8 +135,15 @@ final class StatusItemController: NSObject {
 
     /// Called when a notification is clicked — bring the panel forward too, so the user can see
     /// what else is waiting.
+    /// Called when a notification is clicked, and when the app is reopened from Spotlight or
+    /// Finder. This is the way back in when the menu bar icon cannot be reached, so it must work
+    /// in *both* modes — it used to do nothing at all in menu-bar mode, which is exactly the
+    /// state a user gets stranded in.
     func revealPanel() {
-        if settings.mode == .pinned { panel.showPinned() }
+        switch settings.mode {
+        case .pinned: panel.showPinned()
+        case .menuBar: panel.showTransient(below: statusItem?.button)
+        }
     }
 
     private func updateStatusItem() {
@@ -222,7 +229,32 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func togglePin() {
+        if settings.mode == .pinned, !MenuBarReachability.isReachable(button: statusItem?.button) {
+            confirmUnpinWithHiddenStatusItem()
+            return
+        }
         settings.mode = settings.mode == .pinned ? .menuBar : .pinned
+    }
+
+    /// Unpinning hides the panel and leaves the status item as the only way back. When macOS has
+    /// parked that item behind the notch, "unpin" is a one-way door, so the user is told before
+    /// they walk through it rather than after.
+    private func confirmUnpinWithHiddenStatusItem() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Beacon's menu bar icon is hidden"
+        alert.informativeText =
+            "The menu bar is full, so macOS has parked Beacon's icon behind the notch, "
+            + "where it cannot be clicked. Unpinning hides the panel, and that icon is the "
+            + "usual way to open it again.\n\n"
+            + "Free up a menu bar slot to get the icon back. Either way, opening Beacon from "
+            + "Spotlight always brings the panel back."
+        alert.addButton(withTitle: "Keep pinned")
+        alert.addButton(withTitle: "Unpin anyway")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertSecondButtonReturn {
+            settings.mode = .menuBar
+        }
     }
 
     @objc private func markSeen() {
@@ -230,7 +262,7 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func refreshUsage() {
-        state.usage.refresh()
+        state.usage.refreshByUser()
     }
 
     @objc private func openSettings() {

@@ -162,7 +162,7 @@ extension Jumper {
 
     /// `osascript` rather than `NSAppleScript`: it needs no main-thread run loop, so the jump
     /// stays entirely off the main thread (SPEC §5.6).
-    private static func runAppleScript(_ source: String) -> Bool {
+    static func runAppleScript(_ source: String) -> Bool {
         let result = Shell.run("/usr/bin/osascript", ["-e", source], timeout: appleScriptTimeout)
         guard result.exitCode == 0 else {
             log.error("AppleScript jump failed")

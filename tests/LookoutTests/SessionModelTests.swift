@@ -254,4 +254,23 @@ final class SessionModelTests: XCTestCase {
         XCTAssertEqual(Format.duration(4320), "1h 12m")
         XCTAssertEqual(Format.duration(-5), "0s")
     }
+
+    /// `detailTool` is "the tool name in front of the colon" — its partner `detailArgument`
+    /// already insists on both halves being present. Without that check the split returns the
+    /// *whole* detail as if it were a tool name, and `statusLabel` grows to the full 120-char
+    /// detail. The row draws that label at its full intrinsic width, so the row overflowed the
+    /// panel and got clipped at both edges.
+    func testADetailWithoutAColonHasNoToolName() {
+        var session = Session()
+        session.state = .needsYou
+        session.detail = "click me — should focus the ChatGPT app"
+
+        XCTAssertNil(session.detailTool)
+        XCTAssertEqual(session.statusLabel, "Needs permission")
+
+        // The colon form keeps working exactly as before.
+        session.detail = "Bash: rm -rf build"
+        XCTAssertEqual(session.detailTool, "Bash")
+        XCTAssertEqual(session.statusLabel, "Needs permission · Bash")
+    }
 }

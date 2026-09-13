@@ -30,6 +30,9 @@ enum ScanCadence {
 final class SessionStore: ObservableObject {
     /// Merged and sorted: state files first, then anything the process scan found.
     @Published private(set) var sessions: [Session] = []
+    /// The newest Codex rate limits seen in a live rollout (SPEC §17.7 without hooks) — read by
+    /// `AppState.refreshCodexUsage()` alongside the reporter's `codex-usage.json`.
+    @Published private(set) var rolloutUsage: CodexUsageSnapshot?
 
     /// Called for every state change, with the state the session was in before (nil = first sight).
     /// Not called for the initial load, so launching Lookout does not replay old notifications.
@@ -48,10 +51,12 @@ final class SessionStore: ObservableObject {
     private var previousStates: [String: SessionState] = [:]
     private var seededTransitions = false
     private let scanner = ProcessScanRunner()
+    private let rolloutCache = CodexRolloutCache()
     private var prunes: Bool
 
     /// Adaptive-cadence state (`ScanCadence`), queue-confined like everything else here.
     private var lastCandidatePIDs: Set<Int32> = []
+    private var lastRolloutIDs: Set<String> = []
     private var candidatesChangedLastScan = false
     private var lastFileChangeAt: Date?
 
@@ -180,17 +185,34 @@ final class SessionStore: ObservableObject {
         if discoveryEnabled {
             let covered = Set(fileSessions.compactMap(\.pid))
             let discovered = scanner.scan(coveredPIDs: covered, agentCommands: agentCommands)
+            // Codex Desktop sessions have no process to scan for and, without trusted hooks, no
+            // state file either; their own rollout files are the third source. Same merge rule:
+            // a state file for the id wins.
+            let rollouts = CodexRolloutDiscovery.discover(cache: rolloutCache)
             // A discovered row now carries the real session id, so the file has to win on id
             // as well as on pid (SPEC §9.1).
-            merged = Session.merge(files: fileSessions, discovered: discovered)
+            merged = CodexDiscoveryMerge.merge(
+                files: fileSessions, processes: discovered, rollouts: rollouts.sessions
+            )
 
-            // Feeds `ScanCadence`: the tick stays fast while the set of discovered agent pids is
-            // still changing, and backs off once it has been stable for a full scan.
+            // Feeds `ScanCadence`: the tick stays fast while the set of discovered agent pids (or
+            // live rollouts) is still changing, and backs off once it has been stable for a scan.
             let candidatePIDs = Set(discovered.compactMap(\.pid))
-            candidatesChangedLastScan = candidatePIDs != lastCandidatePIDs
+            let rolloutIDs = Set(rollouts.sessions.map(\.sessionID))
+            candidatesChangedLastScan = candidatePIDs != lastCandidatePIDs || rolloutIDs != lastRolloutIDs
+            if rolloutIDs != lastRolloutIDs {
+                log.notice("rollout discovery: \(rolloutIDs.count, privacy: .public) live Codex session(s) without hooks")
+            }
             lastCandidatePIDs = candidatePIDs
+            lastRolloutIDs = rolloutIDs
+            let usage = rollouts.usage
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.rolloutUsage != usage else { return }
+                self.rolloutUsage = usage
+            }
         } else {
             candidatesChangedLastScan = false
+            rolloutCache.retain(paths: [])
         }
 
         let sorted = Session.sorted(merged)

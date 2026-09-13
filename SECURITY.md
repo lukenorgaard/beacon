@@ -16,6 +16,12 @@ include project paths, prompts, tool commands, questions, answers, titles, usage
 Logs may include excerpts or diagnostic replies. Truncation is not redaction: text can still contain
 secrets or confidential material. Do not upload this directory, raw logs or real screenshots.
 
+Automatic Codex discovery reads recent files under `$CODEX_HOME/sessions` (by default
+`~/.codex/sessions`). It retains parsed metadata in memory while a rollout is recent and drops
+it when the file ages out. Reads are bounded; older context in very large files may be unavailable
+on a cold start. CLI sessions are matched using open rollout file paths from macOS process
+information. Discovery itself does not upload transcripts or write a transcript cache to disk.
+
 Beacon has no maintainer-operated service, telemetry or analytics. The intentional network and
 process integrations are:
 

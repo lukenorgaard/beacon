@@ -400,4 +400,19 @@ final class JumperTests: XCTestCase {
             "the guard in raiseEditorWindow is what keeps this from opening a window"
         )
     }
+
+    /// SPEC line 245: "Codex desktop (ChatGPT app) sessions: app activation only". The click
+    /// used to fall through to `activate(_:)`, which looks up `NSRunningApplication` by the host
+    /// pid — and for a Codex desktop session that pid is `cua_node/bin/node_repl` inside the
+    /// bundle, not a registered application, so the lookup returned nil and the click did
+    /// nothing. AppleScript activation is the one mechanism that actually fronts this app.
+    func testACodexDesktopSessionIsActivatedByAppleScript() {
+        XCTAssertEqual(Jumper.codexBundleID, "com.openai.codex", "ChatGPT.app ships under this id")
+        let script = Jumper.codexActivationScript()
+        XCTAssertEqual(script, "tell application id \"com.openai.codex\" to activate")
+        // Targeting by id, not by name: two apps may be called ChatGPT, only one carries the id.
+        XCTAssertFalse(script.contains("\"ChatGPT\""))
+        // Not a LaunchServices jump: `open -b`/`open -a` exit 0 and leave the frontmost app alone.
+        XCTAssertNil(Jumper.launchArguments(for: .codexApp))
+    }
 }

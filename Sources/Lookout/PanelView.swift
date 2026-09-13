@@ -91,11 +91,8 @@ struct PanelView: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer(minLength: metrics.controlGap)
-                    if let headerSummary {
-                        Text(headerSummary)
-                            .font(metrics.numeral)
-                            .foregroundStyle(Theme.textTertiary)
-                            .lineLimit(1)
+                    if headerSummary != nil {
+                        UsageChips(claude: state.usage.snapshot, codex: state.codexUsage)
                             .fixedSize(horizontal: true, vertical: false)
                             .layoutPriority(1)
                     }
@@ -117,11 +114,8 @@ struct PanelView: View {
         HStack(spacing: metrics.controlGap) {
             tabStrip
             Spacer(minLength: metrics.controlGap)
-            if let usageSummary {
-                Text(usageSummary)
-                    .font(metrics.numeral)
-                    .foregroundStyle(Theme.textTertiary)
-                    .lineLimit(1)
+            if usageSummary != nil {
+                UsageChips(claude: state.usage.snapshot, codex: state.codexUsage)
                     .fixedSize(horizontal: true, vertical: false)
             }
         }
@@ -162,10 +156,24 @@ struct PanelView: View {
 
     /// The two percentages the owner glances at constantly. They are always on screen while the
     /// Sessions tab is selected — the only question is *where*.
+    /// One entry per chip, Claude first, then Codex when the reporter has written its limits.
+    private var summaryTexts: [String] {
+        guard state.tab == .sessions else { return [] }
+        var texts: [String] = []
+        if let snapshot = state.usage.snapshot, let text = UsageChips.claudeText(snapshot) {
+            texts.append(text)
+        }
+        if let codex = state.codexUsage, let text = UsageChips.codexText(codex) {
+            texts.append(text)
+        }
+        return texts
+    }
+
+    private var summaryChipsWidth: CGFloat { metrics.usageChipsWidth(texts: summaryTexts) }
+
     private var percentSummary: String? {
-        guard state.tab == .sessions, let snapshot = state.usage.snapshot else { return nil }
-        let summary = percentSummary(snapshot)
-        return summary.isEmpty ? nil : summary
+        let texts = summaryTexts
+        return texts.isEmpty ? nil : texts.joined(separator: "  ")
     }
 
     /// SPEC §18.3: beside the strip while it has room. With a fourth tab the segments tighten
@@ -175,7 +183,8 @@ struct PanelView: View {
     private var usageSummary: String? {
         guard let summary = percentSummary else { return nil }
         let labels = visibleTabs.map(PanelView.tabLabel(state))
-        return metrics.tabStripFitsSummary(labels: labels, summary: summary) ? summary : nil
+        return metrics.tabStripFitsSummary(labels: labels, summaryWidth: summaryChipsWidth)
+            ? summary : nil
     }
 
     private var headerSummary: String? {
@@ -189,7 +198,7 @@ struct PanelView: View {
     private var headerDetail: String {
         let detail = state.summaryDetail
         guard headerSummary != nil else { return detail }
-        let available = metrics.headerDetailWidth(summary: headerSummary)
+        let available = metrics.headerDetailWidth(summaryWidth: headerSummary == nil ? 0 : summaryChipsWidth)
         guard metrics.textWidth(detail, font: metrics.rowSecondaryNSFont) > available
         else { return detail }
         return AppState.compactDetail(detail)
@@ -205,10 +214,7 @@ struct PanelView: View {
     }
 
     private func percentSummary(_ snapshot: UsageSnapshot) -> String {
-        var parts: [String] = []
-        if let session = snapshot.sessionPercent { parts.append("\(Int(session.rounded()))%") }
-        if let weekly = snapshot.weeklyPercent { parts.append("\(Int(weekly.rounded()))%") }
-        return parts.joined(separator: " · ")
+        UsageChips.claudeText(snapshot) ?? ""
     }
 
     // MARK: Filter row (SPEC §17.3)
@@ -232,7 +238,10 @@ struct PanelView: View {
         switch state.tab {
         case .sessions:
             SessionsListView(state: state)
-                .frame(height: metrics.listHeight(rows: state.visibleSessions.count))
+                .frame(height: {
+                    let sections = state.sessionSections
+                    return metrics.listHeight(rows: sections.rowCount, headers: sections.headerCount)
+                }())
         case .agents:
             AgentsListView(state: state)
                 .frame(height: metrics.agentListHeight(rows: state.subagents.count))

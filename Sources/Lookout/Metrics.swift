@@ -189,11 +189,14 @@ extension Theme {
         /// estimate…" and "Live sessions only…"), below the priced rows.
         var sessionsTodayCaptionHeight: CGFloat { rounded(28) }
 
-        /// One bar per Codex window (5 h alone, or 5 h + weekly) plus its header line.
+        /// One bar per Codex window (5 h alone, or 5 h + weekly) plus its header line, on a card
+        /// of its own (`CodexUsageSection`) padded by `rowInset` on every side. Leaving that padding
+        /// out sized the window short and clipped the last line of the Usage tab.
         func codexSectionHeight(cards: Int) -> CGFloat {
             guard cards > 0 else { return 0 }
             return codexSectionHeaderHeight
                 + CGFloat(cards) * usageCardHeight + CGFloat(max(0, cards - 1)) * usageCardGap
+                + 2 * rowInset
         }
 
         /// The header line, up to five session rows, and the two caption lines under them.

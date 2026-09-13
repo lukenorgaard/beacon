@@ -127,6 +127,7 @@ final class PanelController {
             historyGroups: state.historyGroups.count,
             codexCards: codexCards,
             sessionsToday: min(sessionsToday, 5),
+            sessionHeaders: state.sessionSections.headerCount,
             sentinelRows: Sentinel.layouts(signals, metrics: metrics),
             sentinelApps: Sentinel.topApps(state.systemWatch.snapshot).count,
             sentinelThermalChip: Sentinel.thermalChip(state.systemWatch.snapshot) != nil,

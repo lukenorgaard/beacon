@@ -9,6 +9,10 @@ import SwiftUI
 /// AppKit side. Nothing in Lookout hard-codes a point size or a font.
 enum Theme {
     // MARK: Surfaces
+    /// Cards sit on the panel's translucent HUD ground, so a card drawn only as a tint let the
+    /// desktop read straight through it. This is the card's own opaque ground; the tints below
+    /// still go on top of it, so a card reads exactly as before, just solid.
+    static let cardBase = Color(hex: 0x26282E)
     static let hairline = Color.white.opacity(0.08)
     static let cardFill = Color.white.opacity(0.05)
     static let chipFill = Color.white.opacity(0.12)
