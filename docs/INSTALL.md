@@ -12,6 +12,12 @@ The script builds both supported Mac architectures, bundles Python hooks and the
 and ad-hoc signs `build/Beacon.app`. Copy that app into Applications and open it. Running
 `bash scripts/build.sh --install` explicitly installs and launches it; ordinary builds do neither.
 
+Without an Apple Development identity, `bash scripts/make-local-identity.sh` creates a stable
+self-signed identity that `scripts/build.sh` prefers over ad-hoc when `CODE_SIGN_IDENTITY` is unset.
+macOS ties Keychain and Accessibility approvals to the signing identity, and an ad-hoc signature
+changes on every build. On macOS 26.5, notification permission was refused for ad-hoc and
+self-signed builds alike; an Apple Development identity avoids that.
+
 An ad-hoc signature is not Apple notarization. If macOS blocks a downloaded build, first verify its
 origin and any published checksum. Apple's [safe opening instructions](https://support.apple.com/en-us/102445)
 explain the per-app **System Settings → Privacy & Security → Open Anyway** option when appropriate.
@@ -22,7 +28,9 @@ Do not disable Gatekeeper globally.
 1. Open Beacon's setup screen and choose the hooks you want installed. The installer merges the
    relevant Claude/Codex configuration; review the preview and keep its backup.
 2. Restart existing agent sessions so they pick up new hooks. If Codex asks you to trust a hook,
-   review it in that client's `/hooks` interface.
+   review it in that client's `/hooks` interface; the Codex CLI warns at startup while hooks await
+   review. Codex sessions still appear in Sessions before their hooks are trusted, because Beacon
+   also reads Codex's local session files.
 3. Install **Beacon Companion** for the supported editor windows where you want precise terminal
    focus and reply delivery. Restart or reload those editor windows after installation.
 4. Run a short test task, confirm it appears in Sessions, then use Jump and a harmless reply to
@@ -42,7 +50,8 @@ For agents without hooks, use the [manual reporter](REPORTER.md).
 - **Accessibility / Automation:** used by supported jump and desktop/editor integrations. Grant
   only when you want those features; macOS may ask separately for each target application.
 - **Keychain:** needed for Claude usage limits. The credential belongs to your own Claude login.
-  Denying access prevents that usage fetch; it is not a maintainer credential.
+  Denying access prevents that usage fetch; it is not a maintainer credential. Choose **Always
+  Allow**: **Allow** grants a single read, so the prompt returns. Beacon keeps the token in memory.
 - **Suggestions:** heuristics run without a model provider. Claude uses your installed CLI and
   account; Ollama uses the endpoint you configure. Context may leave the Mac with either remote option.
 

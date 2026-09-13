@@ -17,7 +17,9 @@ Formerly Lookout. A personal, community-developed project maintained by
 ## What it can do
 
 - **Track sessions and sub-agents.** Live state, project, model, elapsed time and context usage;
-  filter by state or host, sort by activity or project, and pin important sessions.
+  filter by state or host, sort by activity or project, and pin important sessions. Codex sessions
+  get their own section and appear even without trusted hooks; sessions cluster by project, with
+  worktrees under their repository.
 - **Bring you back to the work.** Jump to a supported editor, terminal or desktop session.
   Optional notifications and configurable global shortcuts help you respond quickly.
 - **Answer supported requests.** Attention cards show permission requests and questions. Allow,
@@ -25,6 +27,7 @@ Formerly Lookout. A personal, community-developed project maintained by
   Support depends on the agent and version; some integrations use undocumented interfaces.
 - **See usage.** Claude account limits from Anthropic, Codex limits from local session files,
   context indicators and per-session cost estimates. Estimates use editable prices, not your bill.
+  Chips beside the tabs show both accounts' limits at a glance.
 - **Watch your Mac with Sentinel.** CPU, memory pressure, swap and disk gauges, recent resource
   charts, apps ranked by CPU or memory, and explanations with practical next steps. Sustained
   Chrome helper overload can offer a confirmed Stop action. [How Sentinel works](docs/SENTINEL.md).
