@@ -100,6 +100,7 @@ struct SessionRow: View {
     private var rowBackground: some View {
         let shape = RoundedRectangle(cornerRadius: metrics.rowCorner, style: .continuous)
         return ZStack {
+            shape.fill(Theme.cardBase)
             shape.fill(family.opacity(Theme.familyFill))
             if hovering { shape.fill(Theme.hoverFill) }
             shape.strokeBorder(

@@ -5,6 +5,15 @@ enum UsageLevel {
     case ok
     case warn
     case critical
+
+    /// The band the panel header uses for its percentage chips: amber from 80 %, red from
+    /// 90 %. Deliberately its own scale — the Usage tab keeps the wider 50/80 bands, which are
+    /// driven by the API's own `severity` as well as the number.
+    static func header(percent: Double) -> UsageLevel {
+        if percent >= 90 { return .critical }
+        if percent >= 80 { return .warn }
+        return .ok
+    }
 }
 
 /// One card in the Usage tab, built from an entry of `limits[]` (SPEC §2.3).

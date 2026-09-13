@@ -92,4 +92,19 @@ final class UsageModelTests: XCTestCase {
         XCTAssertNil(Keychain.token(fromCredentialsJSON: Data(#"{"mcpOAuth":{}}"#.utf8)))
         XCTAssertNil(Keychain.token(fromCredentialsJSON: Data("not json".utf8)))
     }
+
+    /// The panel header's own band: amber from 80 %, red from 90 %. Distinct from the Usage
+    /// tab's 50/80 bands, which also fold in the API's `severity`.
+    func testHeaderBandsAreEightyAmberAndNinetyRed() {
+        XCTAssertEqual(UsageLevel.header(percent: 0), .ok)
+        XCTAssertEqual(UsageLevel.header(percent: 79.4), .ok)
+        XCTAssertEqual(UsageLevel.header(percent: 80), .warn, "80 is amber, not still ok")
+        XCTAssertEqual(UsageLevel.header(percent: 89.9), .warn)
+        XCTAssertEqual(UsageLevel.header(percent: 90), .critical, "90 is red")
+        XCTAssertEqual(UsageLevel.header(percent: 100), .critical)
+
+        // The wider Usage-tab bands are untouched by this.
+        XCTAssertEqual(UsageLimit.level(percent: 60, severity: "normal"), .warn)
+        XCTAssertEqual(UsageLimit.level(percent: 85, severity: "normal"), .critical)
+    }
 }

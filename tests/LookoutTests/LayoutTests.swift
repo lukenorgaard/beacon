@@ -67,4 +67,26 @@ final class LayoutTests: XCTestCase {
         XCTAssertEqual(SessionAgent(raw: nil).name, "unknown")
         XCTAssertEqual(SessionAgent(raw: "  Gemini  ").name, "gemini")
     }
+
+    /// A card drawn only as a tint over the panel's translucent HUD ground let the desktop
+    /// read straight through it. The ground under every card has to be fully opaque.
+    /// The Codex section is drawn on a padded card; the height the window is sized from has to
+    /// include that padding, or the Usage tab's last line is clipped.
+    func testTheCodexCardPaddingIsCountedInItsHeight() {
+        let metrics = Theme.Metrics.standard
+        XCTAssertEqual(metrics.codexSectionHeight(cards: 0), 0)
+        XCTAssertEqual(
+            metrics.codexSectionHeight(cards: 2),
+            metrics.codexSectionHeaderHeight + 2 * metrics.usageCardHeight + metrics.usageCardGap
+                + 2 * metrics.rowInset,
+            accuracy: 0.01
+        )
+    }
+
+    func testCardsAreNotSeeThrough() {
+        let base = NSColor(Theme.cardBase)
+        XCTAssertEqual(base.alphaComponent, 1.0, accuracy: 0.001)
+        // Dark enough to stay a panel surface rather than a light patch on a dark HUD.
+        XCTAssertLessThan(base.usingColorSpace(.sRGB)!.brightnessComponent, 0.3)
+    }
 }

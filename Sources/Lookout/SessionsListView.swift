@@ -18,22 +18,6 @@ struct SessionsListView: View {
     @Environment(\.metrics) var metrics
     @State private var frames = RowFrames()
 
-    @ViewBuilder
-    private func overflowMask(rows: Int) -> some View {
-        if metrics.listOverflows(rows: rows) {
-            LinearGradient(
-                stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.86),
-                    .init(color: .black.opacity(0.08), location: 1),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-        } else {
-            Color.black
-        }
-    }
-
     var body: some View {
         Group {
             if state.visibleSessions.isEmpty {
@@ -62,8 +46,6 @@ struct SessionsListView: View {
                     }
                     .padding(.horizontal, metrics.listInset)
                 }
-                // A capped list hides rows without any cue; fading the last one says "there is more".
-                .mask(overflowMask(rows: state.visibleSessions.count))
             }
         }
     }
